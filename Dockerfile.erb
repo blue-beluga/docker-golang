@@ -1,0 +1,41 @@
+# encoding: UTF-8
+
+FROM <%= ENV.fetch('FROM') %>
+MAINTAINER The Blue Beluga <admin@bluebeluga.io>
+
+LABEL name="golang"
+LABEL description="Alpine Linux Base with Golang"
+LABEL version="<%= ENV.fetch('GOLANG_VERSION') %>"
+LABEL git_revision="<%= ENV.fetch('GIT_REVISION') %>"
+
+ENV GOLANG_BOOTSTRAP_VERSION <%= ENV.fetch('GOLANG_BOOTSTRAP_VERSION') %>
+ENV GOLANG_BOOTSTRAP_SHA1 <%= ENV.fetch('GOLANG_BOOTSTRAP_SHA1') %>
+ENV GOLANG_VERSION <%= ENV.fetch('GOLANG_VERSION') %>
+ENV GOLANG_SHA256 <%= ENV.fetch('GOLANG_SHA256') %>
+
+COPY files/no-pic.patch /
+RUN apk-install --no-cache bash ca-certificates git && \
+    apk-install --no-cache --virtual .build-deps curl gcc musl-dev openssl libgcc make && \
+    mkdir -p /usr/local/bootstrap && \
+    curl -fsSL https://golang.org/dl/go${GOLANG_BOOTSTRAP_VERSION}.src.tar.gz -o golang.tar.gz && \
+    echo "${GOLANG_BOOTSTRAP_SHA1}  golang.tar.gz" | sha1sum -c - && \
+    tar -C /usr/local/bootstrap -xzf golang.tar.gz && \
+    rm golang.tar.gz && \
+    cd /usr/local/bootstrap/go/src && \
+    ./make.bash && \
+    export GOROOT_BOOTSTRAP=/usr/local/bootstrap/go && \
+    curl -fsSL https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz -o golang.tar.gz && \
+    echo "${GOLANG_SHA256}  golang.tar.gz" | sha1sum -c - && \
+    tar -C /usr/local -xzf golang.tar.gz && \
+    rm golang.tar.gz && \
+    cd /usr/local/go/src && \
+    patch -p2 -i /no-pic.patch && \
+    ./make.bash && \
+    rm -rf /usr/local/bootstrap /usr/local/go/pkg/bootstrap /*.patch \
+    apk del .build-deps && \
+    rm -f /var/cache/apk/*
+
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+RUN mkdir -p $GOPATH/src $GOPATH/bin && chmod -R 777 $GOPATH
+WORKDIR $GOPATH

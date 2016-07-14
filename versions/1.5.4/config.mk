@@ -1,0 +1,8 @@
+
+export GOLANG_VERSION = 1.5.4
+export GOLANG_SHA256 = 002acabce7ddc140d0d55891f9d4fcfbdd806b9332fb8b110c91bc91afb0bc93
+
+export GOLANG_BOOTSTRAP_VERSION = 1.4.3
+export GOLANG_BOOTSTRAP_SHA1 = 486db10dc571a55c8d795365070f66d343458c48
+
+export FROM = bluebeluga/alpine
